@@ -4,24 +4,7 @@ A small retro Nokia-style Snake game built in plain HTML/CSS/JS, with a button t
 
 ## Run locally
 
-1. Open `index.html` in a browser.
-2. Use arrow keys or WASD to move.
-3. Press `Start` to begin.
-4. Press `Take Polaroid` to capture and download a retro snapshot.
+1. Open https://leenakaushik11.github.io/retro-snake-polaroid/ in a browser.
+2. Use arrow keys or WASD to move on Windows/Desktop or Swipe up down on Mobile phone. You can press `Start` to begin as well
+3. Press `Take Polaroid` to capture and download a retro snapshot of game :P.
 
-## Deploy to GitHub Pages
-
-1. Push this repo to GitHub.
-2. Go to repository settings -> Pages.
-3. Set Source to `Deploy from a branch`.
-4. Choose the `main` branch and `/ (root)` folder.
-5. Save.
-
-Your live page will be available at:
-`https://<your-username>.github.io/retro-snake-polaroid/`
-
-## Notes
-
-- No build step needed.
-- Entirely client-side.
-- Good for a quick profile-page game or fun demo.
