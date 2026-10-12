@@ -19,6 +19,7 @@
   let score = 0;
   let running = false;
   let tickInterval = null;
+  let hasEnded = false;
 
   function placeFood(){
     while(true){
@@ -30,6 +31,7 @@
 
   function updateHud(){
     scoreEl.textContent = score;
+    if (hasEnded) return;
     statusEl.textContent = running ? 'Running' : 'Paused';
   }
 
@@ -50,6 +52,7 @@
 
   function gameOver(msg){
     running = false;
+    hasEnded = true;
     clearInterval(tickInterval);
     statusEl.textContent = 'Game Over — ' + msg;
   }
@@ -62,18 +65,21 @@
       return;
     }
 
-    if(snake.some(seg => seg.x === head.x && seg.y === head.y)){
+    const willEat = head.x === food.x && head.y === food.y;
+    const nextSnake = [head, ...snake];
+    if (!willEat) nextSnake.pop();
+
+    const bodyToCheck = willEat ? nextSnake.slice(1) : nextSnake.slice(1);
+    if (bodyToCheck.some(seg => seg.x === head.x && seg.y === head.y)){
       gameOver('You bit yourself!');
       return;
     }
 
-    snake.unshift(head);
+    snake = nextSnake;
 
-    if(head.x === food.x && head.y === food.y){
+    if (willEat) {
       score++;
       placeFood();
-    } else {
-      snake.pop();
     }
 
     draw();
@@ -81,23 +87,30 @@
   }
 
   function startGame(){
-    if(running) return;
+    if (running) return;
+    if (hasEnded) {
+      resetGame();
+    }
     running = true;
+    hasEnded = false;
     updateHud();
     clearInterval(tickInterval);
     tickInterval = setInterval(step, 120);
   }
 
   function pauseGame(){
+    if (hasEnded) return;
     running = false;
     clearInterval(tickInterval);
     updateHud();
   }
 
   function resetGame(){
+    clearInterval(tickInterval);
     snake = [{x:12,y:12},{x:11,y:12},{x:10,y:12}];
     dir = {x:1,y:0};
     score = 0;
+    hasEnded = false;
     placeFood();
     draw();
     updateHud();
@@ -148,7 +161,10 @@
     };
     const next = map[e.key];
     if(next){
-      if(!(next.x === -dir.x && next.y === -dir.y)){
+      if (hasEnded) {
+        resetGame();
+        dir = next;
+      } else if (!(next.x === -dir.x && next.y === -dir.y)) {
         dir = next;
       }
       if(!running) startGame();
