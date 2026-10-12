@@ -22,6 +22,15 @@
   let hasEnded = false;
 
   function placeFood(){
+    // If board nearly full, fallback to scanning for free cell to avoid long loops
+    if (snake.length >= GRID * GRID - 2) {
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          if (!snake.some(s => s.x === x && s.y === y)) { food = {x, y}; return; }
+        }
+      }
+    }
+
     while(true){
       const f = {x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID)};
       const overlap = snake.some(s => s.x === f.x && s.y === f.y);
@@ -31,7 +40,7 @@
 
   function updateHud(){
     scoreEl.textContent = score;
-    if (hasEnded) return;
+    if (hasEnded) return; // keep Game Over message visible
     statusEl.textContent = running ? 'Running' : 'Paused';
   }
 
@@ -55,6 +64,7 @@
     hasEnded = true;
     clearInterval(tickInterval);
     statusEl.textContent = 'Game Over — ' + msg;
+    startBtn.textContent = 'Restart';
   }
 
   function step(){
@@ -65,16 +75,19 @@
       return;
     }
 
-    const willEat = head.x === food.x && head.y === food.y;
+    const willEat = food && head.x === food.x && head.y === food.y;
+    // Build the new snake for collision checking without mutating original yet
     const nextSnake = [head, ...snake];
     if (!willEat) nextSnake.pop();
 
-    const bodyToCheck = willEat ? nextSnake.slice(1) : nextSnake.slice(1);
+    // Check collision against the rest of the body (exclude head)
+    const bodyToCheck = nextSnake.slice(1);
     if (bodyToCheck.some(seg => seg.x === head.x && seg.y === head.y)){
       gameOver('You bit yourself!');
       return;
     }
 
+    // commit the step
     snake = nextSnake;
 
     if (willEat) {
@@ -87,12 +100,17 @@
   }
 
   function startGame(){
+    // if the game already running, nothing to do
     if (running) return;
+
+    // If previous round ended, reset first
     if (hasEnded) {
       resetGame();
     }
+
     running = true;
     hasEnded = false;
+    startBtn.textContent = 'Start';
     updateHud();
     clearInterval(tickInterval);
     tickInterval = setInterval(step, 120);
@@ -115,6 +133,7 @@
     draw();
     updateHud();
     statusEl.textContent = 'Ready';
+    startBtn.textContent = 'Start';
   }
 
   function takePolaroid(){
@@ -162,12 +181,20 @@
     const next = map[e.key];
     if(next){
       if (hasEnded) {
+        // Reset to a known safe state before accepting direction input
         resetGame();
-        dir = next;
-      } else if (!(next.x === -dir.x && next.y === -dir.y)) {
-        dir = next;
+        // only accept the new direction if it's not the immediate reverse of the default direction
+        if (!(next.x === -dir.x && next.y === -dir.y)) {
+          dir = next;
+        }
+        startGame();
+      } else {
+        // normal input: prevent direct reversal
+        if (!(next.x === -dir.x && next.y === -dir.y)) {
+          dir = next;
+        }
+        if(!running) startGame();
       }
-      if(!running) startGame();
     }
     if(e.key === 'r' || e.key === 'R') resetGame();
   });
