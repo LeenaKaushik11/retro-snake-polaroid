@@ -12,7 +12,7 @@
 
     <section class="game-area">
       <div class="hud">
-        <div>Score: <span id="score">0</span></div>
+        <div>Score: <span id="score">0</span> &nbsp;|&nbsp; High: <span id="high">0</span></div>
         <div id="status">Ready</div>
       </div>
 
@@ -24,8 +24,21 @@
         <button id="polaroidBtn">Take Polaroid</button>
         <a id="downloadLink" style="display:none">Download</a>
       </div>
-      <p class="hint">Use arrow keys or WASD. Snake bites itself = game over.</p>
+      <p class="hint">Use arrow keys or WASD. Press Space to Play/Pause. Press R to reset. Snake bites itself = game over.</p>
     </section>
+
+    <section class="instructions">
+      <h2>How it works</h2>
+      <ul>
+        <li>Pixel art rendering (scaled canvas) for retro look</li>
+        <li>Polaroid button captures the game, applies pixel/sepia filter, frames it, and lets you download</li>
+        <li>Speed increases as your score grows; high score persists in your browser</li>
+      </ul>
+    </section>
+
+    <footer class="footer">
+      <small>Made with ❤️ — add to your GitHub Pages and link from your profile README.</small>
+    </footer>
   </main>
 
   <script src="game.js"></script>

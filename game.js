@@ -3,6 +3,7 @@
   const TILE = 20;
   const canvas = document.getElementById('game-canvas');
   const scoreEl = document.getElementById('score');
+  const highEl = document.getElementById('high');
   const statusEl = document.getElementById('status');
   const startBtn = document.getElementById('startBtn');
   const pauseBtn = document.getElementById('pauseBtn');
@@ -20,6 +21,25 @@
   let running = false;
   let tickInterval = null;
   let hasEnded = false;
+
+  // High score persisted in localStorage
+  let highScore = parseInt(localStorage.getItem('retroSnakeHigh') || '0', 10) || 0;
+  function saveHigh(){
+    localStorage.setItem('retroSnakeHigh', String(highScore));
+    highEl.textContent = highScore;
+  }
+
+  function computeTickMs(){
+    // base 140ms, faster as score increases; clamp at 40ms
+    const ms = Math.max(40, 140 - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
+    return ms;
+  }
+
+  function restartTicker(){
+    if (!running) return;
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(step, computeTickMs());
+  }
 
   function placeFood(){
     // If board nearly full, fallback to scanning for free cell to avoid long loops
@@ -47,6 +67,7 @@
 
   function updateHud(forceText) {
     scoreEl.textContent = score;
+    highEl.textContent = highScore;
     if (forceText) {
       statusEl.textContent = forceText;
       return;
@@ -88,6 +109,11 @@
     clearTicker();
     updateHud('Game Over — ' + msg);
     startBtn.textContent = 'Restart';
+    // update high score if needed
+    if (score > highScore) {
+      highScore = score;
+      saveHigh();
+    }
   }
 
   function step(){
@@ -119,7 +145,11 @@
 
     if (willEat) {
       score++;
+      // update high score immediately if surpassed
+      if (score > highScore) { highScore = score; saveHigh(); }
       placeFood();
+      // speed up when eating
+      restartTicker();
     }
 
     draw();
@@ -140,14 +170,14 @@
     startBtn.textContent = 'Start';
     updateHud();
     clearTicker();
-    tickInterval = setInterval(step, 120);
+    tickInterval = setInterval(step, computeTickMs());
   }
 
   function pauseGame(){
     if (hasEnded) return;
     running = false;
     clearTicker();
-    updateHud();
+    updateHud('Paused');
   }
 
   function resetGame(){
@@ -224,13 +254,35 @@
         if(!running) startGame();
       }
     }
-    if(e.key === 'r' || e.key === 'R') resetGame();
+
+    // Space toggles play/pause
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (hasEnded) {
+        resetGame();
+        startGame();
+      } else if (running) {
+        pauseGame();
+      } else {
+        startGame();
+      }
+    }
+
+    // 'R' to reset while paused or running; after reset, game stays paused
+    if (e.key === 'r' || e.key === 'R') resetGame();
   });
 
-  startBtn.addEventListener('click', startGame);
-  pauseBtn.addEventListener('click', pauseGame);
+  startBtn.addEventListener('click', () => {
+    if (hasEnded) { resetGame(); startGame(); }
+    else if (!running) startGame();
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (running) pauseGame(); else startGame();
+  });
   polaroidBtn.addEventListener('click', takePolaroid);
 
   // initial setup
+  saveHigh();
   resetGame();
 })();
