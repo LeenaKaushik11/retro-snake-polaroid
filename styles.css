@@ -1,0 +1,91 @@
+:root{
+  --bg:#0b1020;
+  --panel:#111420;
+  --accent:#c9ff7a;
+  --muted:#9aa0b4;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: linear-gradient(180deg,#041224 0%, #071726 100%);
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.wrap{
+  width:100%;
+  max-width:980px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border-radius:12px;
+  padding:20px;
+  box-shadow: 0 8px 30px rgba(3,6,12,0.6);
+}
+
+.title{
+  color:var(--accent);
+  text-align:center;
+  margin:6px 0 12px 0;
+  font-size:20px;
+  letter-spacing:1px;
+}
+
+.game-area{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01));
+  padding:14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.02);
+}
+
+.hud{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font-size:14px;
+  margin-bottom:6px;
+}
+
+canvas#game-canvas{
+  image-rendering: pixelated;
+  border-radius:6px;
+  background: linear-gradient(180deg, #080b12, #05060a);
+  width:480px;
+  height:480px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.controls{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+button, a#downloadLink{
+  background:transparent;
+  color:var(--accent);
+  border:1px solid rgba(201,255,122,0.2);
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all .12s ease;
+  display:inline-block;
+}
+button:hover, a#downloadLink:hover{transform:translateY(-2px)}
+button:active, a#downloadLink:active{transform:translateY(0)}
+
+.hint{font-size:12px;color:var(--muted);margin:0}
+
+@media (max-width:560px){
+  canvas#game-canvas{width:320px;height:320px}
+}
