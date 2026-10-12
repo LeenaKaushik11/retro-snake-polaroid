@@ -64,6 +64,31 @@ canvas#game-canvas{
   box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
+/* Joystick (mobile) */
+.joystick{
+  display:none;
+  margin-top:12px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.joy-btn{
+  background: rgba(255,255,255,0.04);
+  color: var(--accent);
+  border: 1px solid rgba(201,255,122,0.12);
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:18px;
+}
+.joystick .middle-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin:8px 0;
+}
+.joy-btn:active{ transform: translateY(1px); }
+
 .controls{
   display:flex;
   gap:8px;
@@ -88,4 +113,12 @@ button:active, a#downloadLink:active{transform:translateY(0)}
 
 @media (max-width:560px){
   canvas#game-canvas{width:320px;height:320px}
+  .joystick{display:block}
 }
+
+/* pointer-coarse devices fallback */
+@media (pointer:coarse) {
+  .joystick{display:block}
+}
+
+.footer{text-align:center;margin-top:12px;color:rgba(255,255,255,0.12)}

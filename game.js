@@ -9,6 +9,7 @@
   const pauseBtn = document.getElementById('pauseBtn');
   const polaroidBtn = document.getElementById('polaroidBtn');
   const downloadLink = document.getElementById('downloadLink');
+  const joystick = document.getElementById('joystick');
 
   canvas.width = GRID * TILE;
   canvas.height = GRID * TILE;
@@ -29,9 +30,11 @@
     highEl.textContent = highScore;
   }
 
+  // Tick timing limits
+  const MIN_TICK_MS = 60; // don't go faster than ~16.7 FPS
+  const BASE_TICK_MS = 140;
   function computeTickMs(){
-    // base 140ms, faster as score increases; clamp at 40ms
-    const ms = Math.max(40, 140 - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
+    const ms = Math.max(MIN_TICK_MS, BASE_TICK_MS - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
     return ms;
   }
 
@@ -228,6 +231,28 @@
     downloadLink.download = `retro-snake-polaroid-${Date.now()}.png`;
     downloadLink.style.display = 'inline-block';
     downloadLink.textContent = 'Download Polaroid';
+  }
+
+  // Mobile joystick support
+  function isMobileUA(){
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+  if (joystick && isMobileUA()){
+    joystick.style.display = 'block';
+    // attach touch handlers
+    joystick.querySelectorAll('.joy-btn').forEach(btn => {
+      btn.addEventListener('touchstart', (ev) => {
+        ev.preventDefault();
+        const d = btn.getAttribute('data-dir');
+        const maps = {up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
+        const next = maps[d];
+        if (next) {
+          // prevent immediate reverse
+          if (!(next.x === -dir.x && next.y === -dir.y)) dir = next;
+          if (!running) startGame();
+        }
+      }, {passive:false});
+    });
   }
 
   document.addEventListener('keydown', (e) => {

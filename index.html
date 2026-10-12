@@ -18,6 +18,16 @@
 
       <canvas id="game-canvas"></canvas>
 
+      <div id="joystick" class="joystick" aria-hidden="true">
+        <button data-dir="up" class="joy-btn up" aria-label="Up">▲</button>
+        <div class="middle-row">
+          <button data-dir="left" class="joy-btn left" aria-label="Left">◀</button>
+          <div class="pad-center" aria-hidden="true"></div>
+          <button data-dir="right" class="joy-btn right" aria-label="Right">▶</button>
+        </div>
+        <button data-dir="down" class="joy-btn down" aria-label="Down">▼</button>
+      </div>
+
       <div class="controls">
         <button id="startBtn">Start</button>
         <button id="pauseBtn">Pause</button>
@@ -25,15 +35,6 @@
         <a id="downloadLink" style="display:none">Download</a>
       </div>
       <p class="hint">Use arrow keys or WASD. Press Space to Play/Pause. Press R to reset. Snake bites itself = game over.</p>
-    </section>
-
-    <section class="instructions">
-      <h2>How it works</h2>
-      <ul>
-        <li>Pixel art rendering (scaled canvas) for retro look</li>
-        <li>Polaroid button captures the game, applies pixel/sepia filter, frames it, and lets you download</li>
-        <li>Speed increases as your score grows; high score persists in your browser</li>
-      </ul>
     </section>
 
     <footer class="footer">
