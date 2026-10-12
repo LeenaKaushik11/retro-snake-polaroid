@@ -121,4 +121,9 @@ button:active, a#downloadLink:active{transform:translateY(0)}
   .joystick{display:block}
 }
 
+/* hide the hint line on touch devices (mobile) */
+@media (hover: none) and (pointer: coarse) {
+  .hint { display: none !important; }
+}
+
 .footer{text-align:center;margin-top:12px;color:rgba(255,255,255,0.12)}
