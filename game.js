@@ -29,11 +29,19 @@
     highEl.textContent = highScore;
   }
 
+  // Touch detection helper
+  function isTouchDevice(){
+    return (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0);
+  }
+
   // Tick timing limits
-  const MIN_TICK_MS = 60;
+  const MIN_TICK_MS = 60; // don't go faster than ~16.7 FPS
   const BASE_TICK_MS = 140;
   function computeTickMs(){
-    const ms = Math.max(MIN_TICK_MS, BASE_TICK_MS - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
+    // make mobile slower: add extra base delay on touch devices
+    const base = isTouchDevice() ? BASE_TICK_MS + 80 : BASE_TICK_MS;
+    // Score and length influence speed, but clamp to MIN_TICK_MS
+    const ms = Math.max(MIN_TICK_MS, base - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
     return ms;
   }
 
@@ -44,6 +52,7 @@
   }
 
   function placeFood(){
+    // If board nearly full, fallback to scanning for free cell to avoid long loops
     if (snake.length >= GRID * GRID - 2) {
       for (let y = 0; y < GRID; y++) {
         for (let x = 0; x < GRID; x++) {
@@ -58,6 +67,7 @@
       if(!overlap){ food = f; return; }
     }
 
+    // fallback scan
     for (let y = 0; y < GRID; y++) {
       for (let x = 0; x < GRID; x++) {
         if (!snake.some(s => s.x === x && s.y === y)) { food = {x, y}; return; }
@@ -72,6 +82,7 @@
       statusEl.textContent = forceText;
       return;
     }
+    // if game ended, keep the Game Over text in place
     if (hasEnded) return;
     statusEl.textContent = running ? 'Running' : 'Paused';
   }
@@ -108,6 +119,7 @@
     clearTicker();
     updateHud('Game Over — ' + msg);
     startBtn.textContent = 'Restart';
+    // update high score if needed
     if (score > highScore) {
       highScore = score;
       saveHigh();
@@ -115,8 +127,10 @@
   }
 
   function step(){
+    // Compute next head position with wrap-around (classic Nokia behaviour)
     let hx = snake[0].x + dir.x;
     let hy = snake[0].y + dir.y;
+    // wrap
     if (hx < 0) hx = GRID - 1;
     if (hx >= GRID) hx = 0;
     if (hy < 0) hy = GRID - 1;
@@ -124,21 +138,27 @@
     const head = {x: hx, y: hy};
 
     const willEat = food && head.x === food.x && head.y === food.y;
+
+    // Build the new snake for collision checking without mutating original yet
     const nextSnake = [head, ...snake];
     if (!willEat) nextSnake.pop();
 
+    // Check collision against the rest of the body (exclude head)
     const bodyToCheck = nextSnake.slice(1);
     if (bodyToCheck.some(seg => seg.x === head.x && seg.y === head.y)){
       gameOver('You bit yourself!');
       return;
     }
 
+    // commit the step
     snake = nextSnake;
 
     if (willEat) {
       score++;
+      // update high score immediately if surpassed
       if (score > highScore) { highScore = score; saveHigh(); }
       placeFood();
+      // speed up when eating
       restartTicker();
     }
 
@@ -147,8 +167,14 @@
   }
 
   function startGame(){
+    // if the game already running, nothing to do
     if (running) return;
-    if (hasEnded) resetGame();
+
+    // If previous round ended, reset first
+    if (hasEnded) {
+      resetGame();
+    }
+
     running = true;
     hasEnded = false;
     startBtn.textContent = 'Start';
@@ -214,97 +240,62 @@
     downloadLink.textContent = 'Download Polaroid';
   }
 
-  // --- Virtual analog joystick ---
-  function isTouchDevice(){
-    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-  }
-
-  function initVirtualJoystick() {
+  // --- Swipe controls for touch devices (preferred over joystick) ---
+  function initSwipeControls(){
     const vjoy = document.getElementById('vjoy');
-    const knob = document.getElementById('vjoy-knob');
-    if (!vjoy || !knob) return;
+    if (vjoy) vjoy.style.display = 'none';
 
-    if (!isTouchDevice()) {
-      vjoy.style.display = 'none';
-      return;
-    }
+    if (!isTouchDevice()) return;
 
-    vjoy.classList.add('visible');
-    let active = false;
-    let rect = vjoy.getBoundingClientRect();
-    const maxRadius = Math.min(rect.width, rect.height) / 2 - 8;
-    const DEADZONE = 10;
+    let startX = 0, startY = 0;
+    const THRESHOLD = 20; // px to count as swipe
 
-    function setKnobPosition(clientX, clientY) {
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = clientX - cx;
-      const dy = clientY - cy;
-      const dist = Math.hypot(dx, dy);
-      const r = Math.min(dist, maxRadius);
-      const ux = dist === 0 ? 0 : dx / dist;
-      const uy = dist === 0 ? 0 : dy / dist;
-      const knobX = cx + ux * r;
-      const knobY = cy + uy * r;
+    canvas.addEventListener('touchstart', (ev) => {
+      if (!ev.touches || ev.touches.length === 0) return;
+      ev.preventDefault();
+      const t = ev.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }, { passive: false });
 
-      const leftPct = ((knobX - rect.left) / rect.width) * 100;
-      const topPct = ((knobY - rect.top) / rect.height) * 100;
-      knob.style.left = leftPct + '%';
-      knob.style.top = topPct + '%';
+    canvas.addEventListener('touchmove', (ev) => {
+      // prevent the page from scrolling when swiping across the game canvas
+      if (!ev.touches || ev.touches.length === 0) return;
+      ev.preventDefault();
+    }, { passive: false });
 
-      if (dist < DEADZONE) return;
+    canvas.addEventListener('touchend', (ev) => {
+      const t = (ev.changedTouches && ev.changedTouches[0]) || null;
+      if (!t) return;
+      ev.preventDefault();
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
 
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
-      const nextDir = (absDx > absDy)
-        ? (dx > 0 ? {x:1,y:0} : {x:-1,y:0})
-        : (dy > 0 ? {x:0,y:1} : {x:0,y:-1});
+      if (Math.max(absX, absY) < THRESHOLD) {
+        // treat as tap — optionally start the game if paused
+        if (!running && !hasEnded) startGame();
+        return;
+      }
 
-      if (!(nextDir.x === -dir.x && nextDir.y === -dir.y)) {
+      // Choose dominant axis to map to cardinal direction
+      let nextDir = null;
+      if (absX > absY) {
+        nextDir = dx > 0 ? {x:1,y:0} : {x:-1,y:0};
+      } else {
+        nextDir = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
+      }
+
+      // prevent immediate reverse
+      if (!(nextDir.x === -dir.x && nextDir.y === -dir.y)){
         dir = nextDir;
       }
       if (!running) startGame();
-    }
-
-    vjoy.addEventListener('touchstart', (ev) => {
-      ev.preventDefault();
-      active = true;
-      rect = vjoy.getBoundingClientRect();
-      const touch = ev.changedTouches[0];
-      setKnobPosition(touch.clientX, touch.clientY);
     }, { passive: false });
-
-    vjoy.addEventListener('touchmove', (ev) => {
-      ev.preventDefault();
-      if (!active) return;
-      const touch = ev.changedTouches[0];
-      setKnobPosition(touch.clientX, touch.clientY);
-    }, { passive: false });
-
-    vjoy.addEventListener('touchend', () => {
-      active = false;
-      knob.style.left = '50%';
-      knob.style.top = '50%';
-    });
-
-    // also allow mouse dragging on touch-simulating desktop browsers
-    vjoy.addEventListener('pointerdown', (ev) => {
-      if (!isTouchDevice()) return;
-      active = true;
-      rect = vjoy.getBoundingClientRect();
-      setKnobPosition(ev.clientX, ev.clientY);
-    });
-    vjoy.addEventListener('pointermove', (ev) => {
-      if (!active || !isTouchDevice()) return;
-      setKnobPosition(ev.clientX, ev.clientY);
-    });
-    vjoy.addEventListener('pointerup', () => {
-      active = false;
-      knob.style.left = '50%';
-      knob.style.top = '50%';
-    });
   }
 
+  // Robust keyboard handling including preventing default scroll behavior
   document.addEventListener('keydown', (e) => {
     // don't intercept when user is typing in an input/textarea/contenteditable
     const active = document.activeElement;
@@ -318,12 +309,16 @@
 
     const next = map[e.key];
     if (next && !inTextInput) {
+      // prevent the browser from scrolling on arrow keys
+      e.preventDefault();
+
       if (hasEnded) {
         resetGame();
         if (!(next.x === -dir.x && next.y === -dir.y)) dir = next;
         startGame();
         return;
       }
+
       if (!(next.x === -dir.x && next.y === -dir.y)) {
         dir = next;
       }
@@ -332,7 +327,7 @@
 
     const isSpace = (e.code === 'Space') || (e.key === ' ') || (e.key === 'Spacebar');
     if (isSpace && !inTextInput) {
-      e.preventDefault();
+      e.preventDefault(); // prevent page scroll on space
       if (hasEnded) {
         resetGame();
         startGame();
@@ -344,6 +339,7 @@
     }
 
     if (!inTextInput && (e.key === 'r' || e.key === 'R')) {
+      e.preventDefault();
       resetGame();
     }
   });
@@ -358,7 +354,8 @@
   });
   polaroidBtn.addEventListener('click', takePolaroid);
 
-  initVirtualJoystick();
+  // initialize swipe controls for mobile
+  initSwipeControls();
   saveHigh();
   resetGame();
 })();
