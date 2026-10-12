@@ -66,7 +66,7 @@ canvas#game-canvas{
 
 #vjoy{
   position:fixed;
-  left:16px;
+  right:16px;
   bottom:16px;
   width:120px;
   height:120px;
@@ -82,25 +82,27 @@ canvas#game-canvas{
   pointer-events:auto;
 }
 #vjoy.visible{ display:flex; }
+
 #vjoy-base{
   position:absolute;
   left:0; top:0;
   width:100%; height:100%;
   border-radius:50%;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.06), rgba(0,0,0,0.16));
-  box-shadow: inset 0 2px 8px rgba(255,255,255,0.03), 0 6px 20px rgba(0,0,0,0.35);
-  border:1px solid rgba(255,255,255,0.02);
+  background: radial-gradient(circle at 34% 30%, rgba(255,255,255,0.96), rgba(255,255,255,0.9));
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.28);
   opacity:0.95;
 }
+
 #vjoy-knob{
   position:absolute;
   width:56px; height:56px;
   left:50%; top:50%;
   transform: translate(-50%, -50%);
   border-radius:50%;
-  background: radial-gradient(circle at 40% 35%, #2ce0ff, #006d7a);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.4), inset 0 2px 6px rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(230,230,230,0.98));
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25), inset 0 2px 6px rgba(255,255,255,0.7);
+  border:1px solid rgba(0,0,0,0.06);
   transition: none;
   touch-action: none;
 }
@@ -126,14 +128,18 @@ button:hover, a#downloadLink:hover{transform:translateY(-2px)}
 button:active, a#downloadLink:active{transform:translateY(0)}
 
 .hint{font-size:12px;color:var(--muted);margin:0}
+.hint-desktop{ display:none; }
+@media (hover: hover) and (pointer: fine) {
+  .hint-desktop{ display:inline; }
+}
 
 @media (max-width:560px){
   canvas#game-canvas{width:320px;height:320px}
 }
 
 @media (max-width:360px) {
-  #vjoy{ width:100px; height:100px; left:10px; bottom:10px; }
+  #vjoy{ width:100px; height:100px; right:10px; bottom:10px; }
   #vjoy-knob{ width:48px; height:48px; }
 }
 
-.footer{text-align:center;margin-top:12px;color:rgba(255,255,255,0.12)}
+.footer{ text-align:center; margin-top:12px; color: rgba(255,255,255,0.12); }
