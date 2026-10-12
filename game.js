@@ -29,9 +29,9 @@
     highEl.textContent = highScore;
   }
 
-  // Touch detection helper
+  // Mobile / touch detection helper
   function isTouchDevice(){
-    return (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0);
+    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
   }
 
   // Tick timing limits
@@ -228,6 +228,7 @@
     let touchStartY = 0;
     let touchStartTime = 0;
     let didMove = false;
+    let inActiveArea = false;
 
     const toggleGameState = () => {
       if (hasEnded) {
@@ -248,19 +249,22 @@
       touchStartY = t.clientY;
       touchStartTime = Date.now();
       didMove = false;
+      inActiveArea = (touchStartY < window.innerHeight * 0.75);
     }, { passive: true });
 
     document.addEventListener('touchmove', (ev) => {
+      if (!inActiveArea) return;
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
       const dx = Math.abs(t.clientX - touchStartX);
       const dy = Math.abs(t.clientY - touchStartY);
       if (dx > 12 || dy > 12) didMove = true;
-      // prevent page scrolling while interacting with the game area
-      if (isTouchDevice()) ev.preventDefault();
+      // prevent page scrolling while interacting inside the active area
+      ev.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchend', (ev) => {
+      if (!inActiveArea) return;
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
       if (didMove) return; // swipe handled by swipe handler
@@ -283,6 +287,7 @@
     if (!isTouchDevice()) return;
 
     let startX = 0, startY = 0;
+    let inActiveArea = false;
     const THRESHOLD = 20;
 
     // make swipe area website-wide by listening on document
@@ -291,15 +296,18 @@
       const t = ev.touches[0];
       startX = t.clientX;
       startY = t.clientY;
+      inActiveArea = (startY < window.innerHeight * 0.75);
     }, { passive: true });
 
     document.addEventListener('touchmove', (ev) => {
+      if (!inActiveArea) return;
       if (!ev.touches || ev.touches.length === 0) return;
-      // prevent scroll when swiping across site for game control
+      // prevent scroll when swiping inside active area
       ev.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchend', (ev) => {
+      if (!inActiveArea) return;
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
       const dx = t.clientX - startX;
