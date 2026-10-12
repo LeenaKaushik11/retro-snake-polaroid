@@ -22,25 +22,21 @@
   let tickInterval = null;
   let hasEnded = false;
 
-  // High score persisted in localStorage
   let highScore = parseInt(localStorage.getItem('retroSnakeHigh') || '0', 10) || 0;
   function saveHigh(){
     localStorage.setItem('retroSnakeHigh', String(highScore));
     highEl.textContent = highScore;
   }
 
-  // Mobile / touch detection helper
   function isTouchDevice(){
     return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
   }
 
-  // Tick timing limits
   const MIN_TICK_MS = 60;
   const BASE_TICK_MS = 140;
   function computeTickMs(){
     const base = isTouchDevice() ? BASE_TICK_MS + 80 : BASE_TICK_MS;
-    const ms = Math.max(MIN_TICK_MS, base - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
-    return ms;
+    return Math.max(MIN_TICK_MS, base - score * 6 - Math.floor((snake.length - 3) / 2) * 2);
   }
 
   function restartTicker(){
@@ -60,8 +56,7 @@
 
     for (let i = 0; i < 1000; i++) {
       const f = {x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID)};
-      const overlap = snake.some(s => s.x === f.x && s.y === f.y);
-      if(!overlap){ food = f; return; }
+      if (!snake.some(s => s.x === f.x && s.y === f.y)) { food = f; return; }
     }
 
     for (let y = 0; y < GRID; y++) {
@@ -86,7 +81,7 @@
     ctx.fillStyle = '#05060a';
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    if(food){
+    if (food) {
       ctx.fillStyle = '#ff4d4d';
       ctx.fillRect(food.x*TILE, food.y*TILE, TILE, TILE);
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
@@ -134,7 +129,7 @@
     if (!willEat) nextSnake.pop();
 
     const bodyToCheck = nextSnake.slice(1);
-    if (bodyToCheck.some(seg => seg.x === head.x && seg.y === head.y)){
+    if (bodyToCheck.some(seg => seg.x === head.x && seg.y === head.y)) {
       gameOver('You bit yourself!');
       return;
     }
@@ -174,8 +169,8 @@
     clearTicker();
     const cx = Math.floor(GRID/2);
     const cy = Math.floor(GRID/2);
-    snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
-    dir = {x:1,y:0};
+    snake = [{x:cx, y:cy}, {x:cx-1, y:cy}, {x:cx-2, y:cy}];
+    dir = {x:1, y:0};
     score = 0;
     hasEnded = false;
     placeFood();
@@ -220,7 +215,13 @@
     downloadLink.textContent = 'Download Polaroid';
   }
 
-  // Mobile touch actions: tap = play/pause, long press = reset (like Space + R)
+  function touchStartsInActiveArea(clientX, clientY) {
+    const lowerRegion = clientY > window.innerHeight * 0.25 && clientY < window.innerHeight * 0.98;
+    const onCanvas = clientY >= canvas.getBoundingClientRect().top && clientY <= canvas.getBoundingClientRect().bottom &&
+      clientX >= canvas.getBoundingClientRect().left && clientX <= canvas.getBoundingClientRect().right;
+    return lowerRegion || onCanvas;
+  }
+
   function initTouchQuickActions(){
     if (!isTouchDevice()) return;
 
@@ -241,7 +242,6 @@
       }
     };
 
-    // make quick actions apply on the whole page (document) so swipe area is website-wide
     document.addEventListener('touchstart', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
@@ -249,7 +249,7 @@
       touchStartY = t.clientY;
       touchStartTime = Date.now();
       didMove = false;
-      inActiveArea = (touchStartY < window.innerHeight * 0.75);
+      inActiveArea = touchStartsInActiveArea(t.clientX, t.clientY);
     }, { passive: true });
 
     document.addEventListener('touchmove', (ev) => {
@@ -259,7 +259,6 @@
       const dx = Math.abs(t.clientX - touchStartX);
       const dy = Math.abs(t.clientY - touchStartY);
       if (dx > 12 || dy > 12) didMove = true;
-      // prevent page scrolling while interacting inside the active area
       ev.preventDefault();
     }, { passive: false });
 
@@ -267,7 +266,7 @@
       if (!inActiveArea) return;
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
-      if (didMove) return; // swipe handled by swipe handler
+      if (didMove) return;
 
       const elapsed = Date.now() - touchStartTime;
       if (elapsed >= 500) {
@@ -279,30 +278,26 @@
     }, { passive: true });
   }
 
-  // --- Swipe controls for touch devices (preferred over joystick) ---
   function initSwipeControls(){
     const vjoy = document.getElementById('vjoy');
     if (vjoy) vjoy.style.display = 'none';
-
     if (!isTouchDevice()) return;
 
     let startX = 0, startY = 0;
     let inActiveArea = false;
     const THRESHOLD = 20;
 
-    // make swipe area website-wide by listening on document
     document.addEventListener('touchstart', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
       startX = t.clientX;
       startY = t.clientY;
-      inActiveArea = (startY < window.innerHeight * 0.75);
+      inActiveArea = touchStartsInActiveArea(t.clientX, t.clientY);
     }, { passive: true });
 
     document.addEventListener('touchmove', (ev) => {
       if (!inActiveArea) return;
       if (!ev.touches || ev.touches.length === 0) return;
-      // prevent scroll when swiping inside active area
       ev.preventDefault();
     }, { passive: false });
 
@@ -310,15 +305,13 @@
       if (!inActiveArea) return;
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
+
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
 
-      if (Math.max(absX, absY) < THRESHOLD) {
-        // small movement — ignore (tap handled by quick actions)
-        return;
-      }
+      if (Math.max(absX, absY) < THRESHOLD) return;
 
       let nextDir = null;
       if (absX > absY) {
@@ -327,14 +320,11 @@
         nextDir = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
       }
 
-      if (!(nextDir.x === -dir.x && nextDir.y === -dir.y)) {
-        dir = nextDir;
-      }
+      if (!(nextDir.x === -dir.x && nextDir.y === -dir.y)) dir = nextDir;
       if (!running) startGame();
     }, { passive: true });
   }
 
-  // Robust keyboard handling including preventing default scroll behavior
   document.addEventListener('keydown', (e) => {
     const active = document.activeElement;
     const inTextInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
@@ -348,18 +338,14 @@
     const next = map[e.key];
     if (next && !inTextInput) {
       e.preventDefault();
-
       if (hasEnded) {
         resetGame();
         if (!(next.x === -dir.x && next.y === -dir.y)) dir = next;
         startGame();
         return;
       }
-
-      if (!(next.x === -dir.x && next.y === -dir.y)) {
-        dir = next;
-      }
-      if(!running) startGame();
+      if (!(next.x === -dir.x && next.y === -dir.y)) dir = next;
+      if (!running) startGame();
     }
 
     const isSpace = (e.code === 'Space') || (e.key === ' ') || (e.key === 'Spacebar');
