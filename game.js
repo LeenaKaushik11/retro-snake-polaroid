@@ -13,7 +13,7 @@
   canvas.height = GRID * TILE;
   const ctx = canvas.getContext('2d');
 
-  let snake = [{x:12,y:12},{x:11,y:12},{x:10,y:12}];
+  let snake = [];
   let dir = {x:1,y:0};
   let food = null;
   let score = 0;
@@ -31,16 +31,28 @@
       }
     }
 
-    while(true){
+    for (let i = 0; i < 1000; i++) {
       const f = {x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID)};
       const overlap = snake.some(s => s.x === f.x && s.y === f.y);
       if(!overlap){ food = f; return; }
     }
+
+    // fallback scan
+    for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < GRID; x++) {
+        if (!snake.some(s => s.x === x && s.y === y)) { food = {x, y}; return; }
+      }
+    }
   }
 
-  function updateHud(){
+  function updateHud(forceText) {
     scoreEl.textContent = score;
-    if (hasEnded) return; // keep Game Over message visible
+    if (forceText) {
+      statusEl.textContent = forceText;
+      return;
+    }
+    // if game ended, keep the Game Over text in place
+    if (hasEnded) return;
     statusEl.textContent = running ? 'Running' : 'Paused';
   }
 
@@ -51,31 +63,46 @@
     if(food){
       ctx.fillStyle = '#ff4d4d';
       ctx.fillRect(food.x*TILE, food.y*TILE, TILE, TILE);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(food.x*TILE+1, food.y*TILE+1, TILE-2, TILE-4);
     }
 
     snake.forEach((seg, i) => {
       ctx.fillStyle = i === 0 ? '#d3ff7a' : '#92c84a';
       ctx.fillRect(seg.x*TILE, seg.y*TILE, TILE, TILE);
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(seg.x*TILE+1, seg.y*TILE+1, TILE-2, TILE-2);
     });
+  }
+
+  function clearTicker(){
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
   }
 
   function gameOver(msg){
     running = false;
     hasEnded = true;
-    clearInterval(tickInterval);
-    statusEl.textContent = 'Game Over — ' + msg;
+    clearTicker();
+    updateHud('Game Over — ' + msg);
     startBtn.textContent = 'Restart';
   }
 
   function step(){
-    const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-
-    if(head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){
-      gameOver('Wall hit');
-      return;
-    }
+    // Compute next head position with wrap-around (classic Nokia behaviour)
+    let hx = snake[0].x + dir.x;
+    let hy = snake[0].y + dir.y;
+    // wrap
+    if (hx < 0) hx = GRID - 1;
+    if (hx >= GRID) hx = 0;
+    if (hy < 0) hy = GRID - 1;
+    if (hy >= GRID) hy = 0;
+    const head = {x: hx, y: hy};
 
     const willEat = food && head.x === food.x && head.y === food.y;
+
     // Build the new snake for collision checking without mutating original yet
     const nextSnake = [head, ...snake];
     if (!willEat) nextSnake.pop();
@@ -112,27 +139,28 @@
     hasEnded = false;
     startBtn.textContent = 'Start';
     updateHud();
-    clearInterval(tickInterval);
+    clearTicker();
     tickInterval = setInterval(step, 120);
   }
 
   function pauseGame(){
     if (hasEnded) return;
     running = false;
-    clearInterval(tickInterval);
+    clearTicker();
     updateHud();
   }
 
   function resetGame(){
-    clearInterval(tickInterval);
-    snake = [{x:12,y:12},{x:11,y:12},{x:10,y:12}];
+    clearTicker();
+    const cx = Math.floor(GRID/2);
+    const cy = Math.floor(GRID/2);
+    snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
     dir = {x:1,y:0};
     score = 0;
     hasEnded = false;
     placeFood();
     draw();
-    updateHud();
-    statusEl.textContent = 'Ready';
+    updateHud('Ready');
     startBtn.textContent = 'Start';
   }
 
@@ -203,7 +231,6 @@
   pauseBtn.addEventListener('click', pauseGame);
   polaroidBtn.addEventListener('click', takePolaroid);
 
-  placeFood();
-  draw();
-  updateHud();
+  // initial setup
+  resetGame();
 })();
