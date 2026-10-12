@@ -240,7 +240,8 @@
       }
     };
 
-    canvas.addEventListener('touchstart', (ev) => {
+    // make quick actions apply on the whole page (document) so swipe area is website-wide
+    document.addEventListener('touchstart', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
       touchStartX = t.clientX;
@@ -249,19 +250,20 @@
       didMove = false;
     }, { passive: true });
 
-    canvas.addEventListener('touchmove', (ev) => {
+    document.addEventListener('touchmove', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
       const dx = Math.abs(t.clientX - touchStartX);
       const dy = Math.abs(t.clientY - touchStartY);
       if (dx > 12 || dy > 12) didMove = true;
-      ev.preventDefault();
+      // prevent page scrolling while interacting with the game area
+      if (isTouchDevice()) ev.preventDefault();
     }, { passive: false });
 
-    canvas.addEventListener('touchend', (ev) => {
+    document.addEventListener('touchend', (ev) => {
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
-      if (didMove) return; // swipe controls already handle movement
+      if (didMove) return; // swipe handled by swipe handler
 
       const elapsed = Date.now() - touchStartTime;
       if (elapsed >= 500) {
@@ -283,19 +285,21 @@
     let startX = 0, startY = 0;
     const THRESHOLD = 20;
 
-    canvas.addEventListener('touchstart', (ev) => {
+    // make swipe area website-wide by listening on document
+    document.addEventListener('touchstart', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
       const t = ev.touches[0];
       startX = t.clientX;
       startY = t.clientY;
     }, { passive: true });
 
-    canvas.addEventListener('touchmove', (ev) => {
+    document.addEventListener('touchmove', (ev) => {
       if (!ev.touches || ev.touches.length === 0) return;
+      // prevent scroll when swiping across site for game control
       ev.preventDefault();
     }, { passive: false });
 
-    canvas.addEventListener('touchend', (ev) => {
+    document.addEventListener('touchend', (ev) => {
       const t = (ev.changedTouches && ev.changedTouches[0]) || null;
       if (!t) return;
       const dx = t.clientX - startX;
@@ -304,7 +308,7 @@
       const absY = Math.abs(dy);
 
       if (Math.max(absX, absY) < THRESHOLD) {
-        // allow quick-tap toggle from initTouchQuickActions to decide
+        // small movement — ignore (tap handled by quick actions)
         return;
       }
 
