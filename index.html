@@ -18,14 +18,9 @@
 
       <canvas id="game-canvas"></canvas>
 
-      <div id="joystick" class="joystick" aria-hidden="true">
-        <button data-dir="up" class="joy-btn up" aria-label="Up">▲</button>
-        <div class="middle-row">
-          <button data-dir="left" class="joy-btn left" aria-label="Left">◀</button>
-          <div class="pad-center" aria-hidden="true"></div>
-          <button data-dir="right" class="joy-btn right" aria-label="Right">▶</button>
-        </div>
-        <button data-dir="down" class="joy-btn down" aria-label="Down">▼</button>
+      <div id="vjoy" aria-hidden="true">
+        <div id="vjoy-base" aria-hidden="true"></div>
+        <div id="vjoy-knob" aria-hidden="true"></div>
       </div>
 
       <div class="controls">
